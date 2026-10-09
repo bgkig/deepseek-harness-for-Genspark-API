@@ -1,0 +1,84 @@
+name: Windows installer (Genspark, unsigned)
+
+# Builds the unsigned Windows x64 installer of the Genspark edition on a
+# GitHub-hosted runner. Unlike windows-package.yml it needs no update-policy
+# inputs and no self-hosted runner: auto-update stays disabled.
+on:
+  workflow_dispatch:
+    inputs:
+      build_version:
+        description: 'Full build version (e.g. 0.2.1-alpha.2.20261009.1); auto = derived from the date and run number'
+        type: string
+        default: auto
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-genspark-package
+  cancel-in-progress: false
+
+jobs:
+  package:
+    runs-on: windows-2025
+    timeout-minutes: 150
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      DSH_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install locked dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          exit $LASTEXITCODE
+      - name: Write package settings
+        # The packager requires an update-policy origin. The Genspark edition
+        # has no update service: a production policy whose endpoint does not
+        # answer only retries in the background and never blocks the app.
+        run: |
+          @(
+            'DSH_DESKTOP_APP_ID=com.deepseek.harness'
+            'DSH_DESKTOP_AUTO_UPDATE_ENV=production'
+            'DSH_DESKTOP_MANDATORY_UPDATE_PROD_ORIGIN=https://www.genspark.ai'
+          ) | Set-Content -Encoding utf8NoBOM apps/desktop/.env.windows
+      - name: Resolve version
+        id: version
+        env:
+          REQUESTED: ${{ inputs.build_version }}
+        run: |
+          $product = (Get-Content apps/desktop/package.json -Raw | ConvertFrom-Json).version
+          $date = (Get-Date).ToUniversalTime().ToString('yyyyMMdd')
+          if ($env:REQUESTED -eq 'auto') { $v = "$product.$date.$env:GITHUB_RUN_NUMBER.$env:GITHUB_RUN_ATTEMPT" } else { $v = $env:REQUESTED }
+          "version=$v" >> $env:GITHUB_OUTPUT
+          "Version: $v" >> $env:GITHUB_STEP_SUMMARY
+      - name: Build installer
+        env:
+          PACKAGE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          pnpm run package:desktop:win:x64:unsigned --build-version "$env:PACKAGE_VERSION"
+          exit $LASTEXITCODE
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: deepseek-harness-genspark-win-x64-${{ steps.version.outputs.version }}
+          path: apps/desktop/.desktop-build/targets/win-x64/unsigned-artifacts/*.exe
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload packaging logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-genspark-logs-${{ github.run_id }}
+          include-hidden-files: true
+          path: apps/desktop/.desktop-build/packaging-runs/
+          if-no-files-found: warn
+          retention-days: 14

@@ -24,11 +24,14 @@ export interface DesktopWelcomeBackend {
   /** @returns The saved UI language without account or provider requests. */
   readLocalePreference(): Promise<string | null>
   /**
-   * @param apiKey - User-entered official provider key.
+   * @param apiKey - User-entered Genspark API key.
    * @returns A safe write outcome without provider diagnostics.
    */
   save(apiKey: string): Promise<{ ok: boolean }>
 }
+
+/** Genspark key slots (`GENSPARK_API_KEY_1`..`_100`); any configured slot opens the workspace. */
+const GENSPARK_KEY_REFS = Array.from({ length: 100 }, (_, index) => `GENSPARK_API_KEY_${index + 1}`)
 
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -104,7 +107,7 @@ export async function connectDesktopWelcome(
       }
       return record(value) && typeof value.apiKeyEnv === 'string' ? [value.apiKeyEnv] : []
     })
-    const unique = [...new Set([...(ref === undefined ? [] : [ref]), ...refs])]
+    const unique = [...new Set([...(ref === undefined ? [] : [ref]), ...refs, ...GENSPARK_KEY_REFS])]
     const states: Record<string, unknown> = {}
     // credentials.describe accepts at most 64 references per request.
     for (let offset = 0; offset < unique.length; offset += 64) {
@@ -116,7 +119,9 @@ export async function connectDesktopWelcome(
     return {
       loggedIn: (await account.state()).status === 'credential-stored',
       hasApiKey: Object.values(states).some(value => record(value) && value.configured === true),
-      writable: ref !== undefined && record(states[ref]) && states[ref].writable === true,
+      // The welcome form stores into a Genspark slot, which the local store can always write.
+      writable: GENSPARK_KEY_REFS.some(key => record(states[key]) && states[key].writable === true)
+        || (ref !== undefined && record(states[ref]) && states[ref].writable === true),
       localePreference: localePreference(namespaces),
     }
   }
@@ -137,8 +142,14 @@ export async function connectDesktopWelcome(
     async save(apiKey) {
       if (!/^[\x21-\x7e]+$/.test(apiKey)) return { ok: false }
       try {
-        const { ref } = await settingsAndReference()
-        if (ref === undefined) return { ok: false }
+        // The entry key goes into the first empty Genspark slot; more keys
+        // (up to 100) are added later on Plugins → Genspark.
+        const states: Record<string, unknown> = {}
+        for (let offset = 0; offset < GENSPARK_KEY_REFS.length; offset += 64) {
+          const batch = await invoke({ namespace: 'credentials', method: 'describe', args: { refs: GENSPARK_KEY_REFS.slice(offset, offset + 64) } })
+          if (record(batch)) Object.assign(states, batch)
+        }
+        const ref = GENSPARK_KEY_REFS.find(key => !(record(states[key]) && states[key].configured === true)) ?? GENSPARK_KEY_REFS[0]!
         await invoke({ namespace: 'credentials', method: 'set', args: { ref, value: apiKey } })
         return { ok: true }
       } catch {

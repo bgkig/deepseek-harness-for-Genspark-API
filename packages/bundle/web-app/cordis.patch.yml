@@ -435,6 +435,10 @@
     - id: ui-settings-web-search
       name: '@deepseek-ai/dsh-client-ui-settings-web-search'
 
+    # Genspark: rotating API keys, model / reasoning, automatic prompt.
+    - id: ui-settings-genspark
+      name: '@deepseek-ai/dsh-client-ui-settings-genspark'
+
     # Plan control: the composer plan seat over the plan projection + /plan channel.
     - id: ui-plan
       name: '@deepseek-ai/dsh-client-ui-plan'

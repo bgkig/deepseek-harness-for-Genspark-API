@@ -103,6 +103,13 @@ export interface PiAiAdapterOptions {
    * every request no matter how often the human signed in.
    */
   auth: PiAiAuthInjection
+  /**
+   * Optional per-route fetch implementation handed to pi-ai for every provider
+   * HTTP request of that route. A composition uses it to observe or re-issue
+   * wire requests (for example rotating credentials on an exhausted key)
+   * without forking the protocol implementations.
+   */
+  resolveFetch?: (provider: string, profile: ResolvedPiAiProviderProfile) => typeof globalThis.fetch | undefined
   /** Resolve the optional durable attachment service at request time. */
   resolveAttachments?: () => AttachmentStore | undefined
   /** Bridge one attachment reference into the current model-tool execution world. */
@@ -399,8 +406,10 @@ export class PiAiAdapter extends LlmAdapter {
             maxBytes: profile.requestImageMaxBytes,
           },
         }, onReplayDegrade)
+      const fetchImpl = this.config.resolveFetch?.(options.provider, profile)
       const events = snapshot.models.streamSimple(model, context, {
         ...profileOptions(profile, reasoning, apiKey),
+        ...fetchImpl === undefined ? {} : { fetch: fetchImpl },
         ...options.temperature === undefined ? {} : { temperature: options.temperature },
         ...options.maxTokens === undefined ? {} : { maxTokens: options.maxTokens },
         ...options.sessionId === undefined ? {} : { sessionId: String(options.sessionId) },

@@ -85,8 +85,9 @@
     - id: agent-default-model
       name: '@deepseek-ai/dsh-agent-default-model'
       config:
-        provider: deepseek-official
-        model: deepseek-flash
+        provider: genspark
+        model: gpt-5
+        reasoningEffort: medium
 
     - id: jobs
       name: '@deepseek-ai/dsh-jobs-local'
@@ -129,6 +130,18 @@
     # document.
     - id: llm-pi-ai
       name: '@deepseek-ai/dsh-llm-pi-ai'
+
+    # Genspark LLM proxy route (`genspark`): up to 100 API keys stored as
+    # GENSPARK_API_KEY_1..100, rotated the moment the key in use is spent and
+    # wrapping back to key 1 after the last one. Keys are edited on the
+    # Plugins → Genspark page.
+    - id: llm-genspark
+      name: '@deepseek-ai/dsh-llm-genspark'
+
+    # Sends a user-configured prompt when an agent stops (completed / error).
+    # Off by default; configured on the Plugins → Genspark page.
+    - id: agent-auto-prompt
+      name: '@deepseek-ai/dsh-agent-auto-prompt'
 
     - id: session-persistence-jsonl
       name: '@deepseek-ai/dsh-session-persistence-jsonl'

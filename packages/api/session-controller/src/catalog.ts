@@ -100,6 +100,10 @@ export async function hasProviderApiKey(ctx: Context): Promise<boolean> {
   if (settings === undefined || credentials === undefined) {
     throw new RemoteError('session/provider-credentials-unavailable', 'provider credentials are unavailable', {})
   }
+  // Genspark keys live in numbered slots rather than behind one apiKeyEnv.
+  for (let slot = 1; slot <= 100; slot++) {
+    if ((await credentials.describe(credentialRef(`GENSPARK_API_KEY_${slot}`))).configured) return true
+  }
   const namespaces = settings.describe({ redactSecrets: true })
   for (const provider of ctx.llm.listConfigurableProviders()) {
     if (provider.provider === 'deepseek-account') continue

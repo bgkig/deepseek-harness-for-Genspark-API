@@ -12,6 +12,9 @@ import { normalizeApiKey } from '@deepseek-ai/dsh-llm'
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import { describeExhaustion, MAX_KEY_SLOTS, NoKeysConfiguredError } from './rotation.ts'
 import type { KeyRotation, KeySlot, RotationEvent } from './rotation.ts'
+import type { GensparkImportResult, GensparkKeyStatus, GensparkRotationRecord } from './types.ts'
+
+export type { GensparkImportResult, GensparkKeySlotStatus, GensparkKeyStatus, GensparkRotationRecord } from './types.ts'
 
 /** Credential reference prefix; slot N is stored under `${prefix}${N}`. */
 export const GENSPARK_KEY_REF_PREFIX = 'GENSPARK_API_KEY_'
@@ -53,56 +56,6 @@ export function parseKeyList(text: string): string[] {
     }
   }
   return keys
-}
-
-/** Status of one slot, without the key literal. */
-export interface GensparkKeySlotStatus {
-  /** 1-based slot. */
-  slot: number
-  /** Credential reference holding the key. */
-  ref: string
-  /** Whether a key is stored. */
-  configured: boolean
-  /** Whether this is the key the next request uses. */
-  active: boolean
-  /** Last four characters of the key, for telling keys apart; absent when empty. */
-  hint?: string
-}
-
-/** The last rotation this process performed. */
-export interface GensparkRotationRecord {
-  /** Abandoned slot. */
-  from: number
-  /** Slot now in use. */
-  to: number
-  /** Human-readable reason. */
-  reason: string
-  /** Whether the walk wrapped back to the first key. */
-  wrapped: boolean
-  /** Epoch milliseconds. */
-  at: number
-}
-
-/** Rotation status for the settings page. */
-export interface GensparkKeyStatus {
-  /** Number of configured keys. */
-  configured: number
-  /** Slot the next request uses, when any key is configured. */
-  activeSlot?: number
-  /** Every slot, in order. */
-  slots: GensparkKeySlotStatus[]
-  /** The last rotation this process performed. */
-  lastRotation?: GensparkRotationRecord
-}
-
-/** Result of a bulk key import. */
-export interface GensparkImportResult {
-  /** Keys stored. */
-  stored: number
-  /** Keys that did not fit into the remaining slots. */
-  skipped: number
-  /** Keys already present in some slot. */
-  duplicates: number
 }
 
 /** Construction inputs supplied by the plugin. */

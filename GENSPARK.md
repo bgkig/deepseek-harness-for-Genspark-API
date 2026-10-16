@@ -5,6 +5,8 @@ This repository is [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-ha
 Everything not listed below is unchanged upstream code.
 
 > 日本語の説明は下にあります / Japanese below.
+>
+> **インストール手順（中学生でもわかる・コピペで完了）: [INSTALL_JA.md](INSTALL_JA.md)**
 
 ## What changed
 

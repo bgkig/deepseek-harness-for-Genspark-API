@@ -410,6 +410,7 @@
       "@deepseek-ai/dsh-llm-pi-ai": ["./packages/llm/llm-pi-ai/src"],
       "@deepseek-ai/dsh-llm-pi-ai/profiles": ["./packages/llm/llm-pi-ai/src/profiles.ts"],
       "@deepseek-ai/dsh-llm-genspark": ["./packages/llm/llm-genspark/src"],
+      "@deepseek-ai/dsh-llm-genspark/types": ["./packages/llm/llm-genspark/src/types.ts"],
       "@deepseek-ai/dsh-agent-auto-prompt": ["./packages/core/agent-auto-prompt/src"],
       "@deepseek-ai/dsh-llm-replay": ["./packages/test-support/llm-replay/src"],
       "@deepseek-ai/dsh-llm-retry": ["./packages/llm/llm-retry/src"],

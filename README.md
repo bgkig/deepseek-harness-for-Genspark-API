@@ -1,5 +1,7 @@
 # DeepSeek Harness
 
+> 🇯🇵 **インストール手順（Windows・コピペで完了）: [INSTALL_JA.md](INSTALL_JA.md)**
+
 English | [中文](README.zh.md)
 
 DeepSeek Harness (`dsh`) is an open-source agent harness developed by [DeepSeek AI](https://deepseek.com).
